@@ -1,0 +1,121 @@
+---
+title: "Practical Machine Learning Project"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Packages
+```{r}
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(RColorBrewer)
+library(rattle)
+library(randomForest)
+library(knitr)
+library(e1071)
+library(repmis)
+```
+
+## Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+
+## Data
+
+The training data for this project are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+
+The data for this project come from this source: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har. 
+
+## Load Data
+
+```{r}
+set.seed(12345)
+
+trainUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+testUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+
+trainData <- read.csv(url(trainUrl), na.strings = c("NA", ""))
+testData <- read.csv(url(testUrl), na.strings = c("NA", ""))
+```
+
+## Clean the Data
+
+Delete the column predictors of the training set that have any missing values.
+```{r}
+train_Data <- trainData[, colSums(is.na(trainData)) == 0]
+test_Data <- testData[, colSums(is.na(testData)) == 0]
+```
+
+Removal of first 7 predictors because they have little predicting power for the class outcome.  
+```{r}
+training <- train_Data[, -c(1:7)]
+testing <- test_Data[, -c(1:7)]
+```
+
+### Split the Data
+
+To get out-of-sample errors, the cleaned training set training is split into a training set for prediction and a validation set for calculating out-of-sample errors.  
+
+```{r}
+set.seed(7826) 
+inTrain <- createDataPartition(training$classe, p = 0.7, list = FALSE)
+train <- training[inTrain, ]
+valid <- training[-inTrain, ]
+```
+
+## Prediction Algorithms 
+### Classification Trees
+```{r}
+control <- trainControl(method = "cv", number = 5)
+rpart_fit <- train(classe ~ ., data = train, method = "rpart", 
+                   trControl = control)
+print(rpart_fit, digits = 4)
+
+fancyRpartPlot(rpart_fit$finalModel)
+```
+
+```{r}
+# predicting the outcomes using the validation set
+rpart_predict <- predict(rpart_fit, valid)
+# show the result of the prediction
+(rpart_conf <- confusionMatrix(valid$classe, rpart_predict))
+```
+```{r}
+(rpart_accuracy <- rpart_conf$overall[1])
+```
+
+Based on the confusion matrix, the accuracy is .5004, meaning the out-of-sample error rate is about .5.  
+
+## Prediction with Random Forests
+
+```{r}
+rf_fit <- train(classe ~ ., data = train, method = "rf", 
+                   trControl = control)
+print(rf_fit, digits = 4)
+```
+
+```{r}
+# predict the outcomes using the validation set
+rf_predict <- predict(rf_fit, valid)
+# Show the prediction result
+(rf_conf <- confusionMatrix(valid$classe, rf_predict))
+```
+For this set of data, the random forest method is a much better method than the classification tree method.  The overall accuracy is .9997, making the out-of-sample error rate about .0003.
+
+## Prediction on Testing Set
+```{r}
+(predict(rf_fit, testing))
+```
+
