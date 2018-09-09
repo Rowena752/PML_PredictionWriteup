@@ -69,7 +69,7 @@ testing <- test_Data[, -c(1:7)]
 To get out-of-sample errors, the cleaned training set training is split into a training set for prediction and a validation set for calculating out-of-sample errors.  
 
 ```{r}
-set.seed(7826) 
+set.seed(726) 
 inTrain <- createDataPartition(training$classe, p = 0.7, list = FALSE)
 train <- training[inTrain, ]
 valid <- training[-inTrain, ]
@@ -96,7 +96,7 @@ rpart_predict <- predict(rpart_fit, valid)
 (rpart_accuracy <- rpart_conf$overall[1])
 ```
 
-Based on the confusion matrix, the accuracy is .5004, meaning the out-of-sample error rate is about .5.  
+Based on the confusion matrix, the accuracy is .5008, meaning the out-of-sample error rate is about .5.  
 
 ## Prediction with Random Forests
 
@@ -112,7 +112,7 @@ rf_predict <- predict(rf_fit, valid)
 # Show the prediction result
 (rf_conf <- confusionMatrix(valid$classe, rf_predict))
 ```
-For this set of data, the random forest method is a much better method than the classification tree method.  The overall accuracy is .9997, making the out-of-sample error rate about .0003.
+For this set of data, the random forest method is a much better method than the classification tree method.  The overall accuracy is .9915, making the out-of-sample error rate about .0085.
 
 ## Prediction on Testing Set
 ```{r}
